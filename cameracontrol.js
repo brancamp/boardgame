@@ -1,4 +1,5 @@
 class CameraControl {
+
     constructor(camera) {
         var self = this;
         this.holder = new THREE.Object3D();
@@ -8,9 +9,9 @@ class CameraControl {
     }
 
     rotate(direction) {
+        var self = this;
         //this.holder.rotation.y += Math.PI / 2;
         if (this.moving == false) {
-            console.log("moving is false");
             this.moving = true;
             var newRot;
             switch (direction) {
@@ -33,9 +34,9 @@ class CameraControl {
             var tween = new TWEEN.Tween(rot)
                 .to(newRot, 200)
                 .onUpdate(function () {
-                    this.holder.rotation.y = rot.y;
+                    self.holder.rotation.y = rot.y;
                 }).onComplete(function () {
-                    this.moving = false;
+                    self.moving = false;
                 }).start();
         }
 
