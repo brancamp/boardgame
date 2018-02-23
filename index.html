@@ -12,22 +12,30 @@
     <script src="three.js/build/three.min.js"></script>
     <script src="player.js"></script>
     <script src="gamecontroller.js"></script>
+    <script src="movebutton.js"></script>
+    <script src='cameracontrol.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+
 </head>
 
 <body>
     <script>
+        var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
+        var boardSize = 15;
+
+        var axes = new THREE.AxesHelper(20);
+        scene.add(axes);
+
 
         //Set up the camera
-        var cameraHolder = new THREE.Object3D();
-        scene.add(cameraHolder);
-        cameraHolder.moving = false;
+
         let camSize = 20;
         var aspect = window.innerWidth / window.innerHeight;
         let camera = new THREE.OrthographicCamera(-camSize * aspect, camSize * aspect, camSize, -camSize, 0, 1000);
-        cameraHolder.add(camera);
-        camera.position.set(10, 20, 10);
+        camera.position.set(10, 15, 10);
         camera.lookAt(scene.position);
+        var cameraHolder = new CameraControl(camera);
 
 
         var renderer = new THREE.WebGLRenderer({
@@ -35,39 +43,88 @@
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        var boxGeo = new THREE.BoxGeometry(10, 1, 10);
+
+        //create the board
+        var boxGeo = new THREE.BoxGeometry(boardSize, 1, boardSize);
         var boxMat = new THREE.MeshBasicMaterial({
             color: 0xcccccc
         });
-        var box = new THREE.Mesh(boxGeo, boxMat);
-        scene.add(box);
+        var board = new THREE.Mesh(boxGeo, boxMat);
+        scene.add(board);
 
-        var game = new GameController(11, 15);
+        //add the players
         var player1 = new Player(0, 0);
+
+        //create the move buttons
+        var north = new MoveButton('north');
+        north.place(0, 0, -(boardSize / 2 + 4));
+        var south = new MoveButton('south');
+        south.place(0, 0, (boardSize / 2 + 4));
+        var east = new MoveButton('east');
+        east.place((boardSize / 2 + 4), 0, 0);
+        var west = new MoveButton('west');
+        west.place(-(boardSize / 2 + 4), 0, 0);
 
 
         window.addEventListener('resize', resizeHandler);
         window.addEventListener('keydown', keyHandler);
+        window.addEventListener('click', clickHandler);
 
         update();
 
+        function clickHandler(e) {
+            var caster = new THREE.Raycaster();
+            mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            caster.setFromCamera(mouse, camera);
+            var intersects = caster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                var clicked = intersects[0];
+                switch (clicked.object.name) {
+                    case 'north':
+                        player1.move('north');
+                        break;
+                    case 'south':
+                        player1.move('south');
+                        break;
+                    case 'east':
+                        player1.move('east');
+                        break;
+                    case 'west':
+                        player1.move('west');
+                        break;
+                }
+            }
+
+
+
+
+
+        }
+
 
         function resizeHandler() {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
+            var aspect = window.innerWidth / window.innerHeight;
+            camera.left = -aspect * camSize;
+            camera.right = aspect * camSize;
+            camera.top = camSize;
+            camera.bottom = -camSize;
+
             camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
         function update() {
             requestAnimationFrame(update);
             renderer.render(scene, camera);
+            TWEEN.update();
 
 
         }
 
         function keyHandler(e) {
-            console.log("index keyhander");
             switch (e.keyCode) {
+                /*
                 case 65:
                     player1.move(1);
                     break;
@@ -80,11 +137,12 @@
                 case 68:
                     player1.move(4);
                     break;
+                    */
                 case 37:
-                    rotateCamera('left');
+                    cameraHolder.rotate('left');
                     break;
                 case 39:
-                    rotateCamera('right');
+                    cameraHolder.rotate('right');
                     break;
             }
         }

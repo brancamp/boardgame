@@ -16,6 +16,10 @@ class Player {
         scene.add(this.ob);
         this.moving = false;
         this.raycaster = new THREE.Raycaster();
+        this.north = new THREE.Vector3(0, 0, -1);
+        this.south = new THREE.Vector3(0, 0, 1);
+        this.east = new THREE.Vector3(1, 0, 0);
+        this.west = new THREE.Vector3(-1, 0, 0);
     }
 
 
@@ -23,17 +27,17 @@ class Player {
     move(dir) {
         this.checkMove(dir);
         switch (dir) {
-            case 1:
-                this.x -= 1;
-                break;
-            case 2:
-                this.z += 1;
-                break;
-            case 3:
+            case 'north':
                 this.z -= 1;
                 break;
-            case 4:
+            case 'south':
+                this.z += 1;
+                break;
+            case 'east':
                 this.x += 1;
+                break;
+            case 'west':
+                this.x -= 1;
                 break;
         };
         this.ob.position.set(this.x, this.y, this.z);
@@ -44,21 +48,21 @@ class Player {
         var origin = new THREE.Vector3(this.x, this.y + 0.5, this.z);
         var dir = new THREE.Vector3();
         switch (moveDir) {
-            case 1:
-                dir.set(-1, 0, 0);
+            case 'north':
+                dir.copy(this.north);
                 break;
-            case 2:
-                dir.set(0, 0, 1);
+            case 'south':
+                dir.copy(this.south);
                 break;
-            case 3:
-                dir.set(0, 0, -1);
+            case 'east':
+                dir.copy(this.east);
                 break;
-            case 4:
-                dir.set(1, 0, 0);
+            case 'west':
+                dir.copy(this.west);
                 break;
         };
 
-        var arrowHelper = new THREE.ArrowHelper(dir, origin, 2);
+        var arrowHelper = new THREE.ArrowHelper(dir, origin, 3);
         scene.add(arrowHelper);
 
     } //end of checkmove function
