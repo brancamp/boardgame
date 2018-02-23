@@ -17,9 +17,19 @@
 <body>
     <script>
         var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(10, 10, 10);
+
+        //Set up the camera
+        var cameraHolder = new THREE.Object3D();
+        scene.add(cameraHolder);
+        cameraHolder.moving = false;
+        let camSize = 20;
+        var aspect = window.innerWidth / window.innerHeight;
+        let camera = new THREE.OrthographicCamera(-camSize * aspect, camSize * aspect, camSize, -camSize, 0, 1000);
+        cameraHolder.add(camera);
+        camera.position.set(10, 20, 10);
         camera.lookAt(scene.position);
+
+
         var renderer = new THREE.WebGLRenderer({
             antialias: true
         });
@@ -56,6 +66,7 @@
         }
 
         function keyHandler(e) {
+            console.log("index keyhander");
             switch (e.keyCode) {
                 case 65:
                     player1.move(1);

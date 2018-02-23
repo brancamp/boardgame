@@ -3,6 +3,7 @@ class Player {
         this.x = x;
         this.z = z;
         this.y = 0.5;
+        this.self = this;
         var geo = new THREE.BoxGeometry(1, 1, 1);
         var mat = new THREE.MeshBasicMaterial({
             color: 0x2D8D9F
@@ -17,7 +18,10 @@ class Player {
         this.raycaster = new THREE.Raycaster();
     }
 
+
+
     move(dir) {
+        this.checkMove(dir);
         switch (dir) {
             case 1:
                 this.x -= 1;
@@ -35,12 +39,31 @@ class Player {
         this.ob.position.set(this.x, this.y, this.z);
     } //end of move function
 
-    checkMove(x, z) {
-        var origin = new Vector3(this.x, this.y + 0.5, this.z);
-        var dir = new Vector3(x - this.x, 0, z - this.z);
-        var arrowHelper = new THREE.ArrowHelper(dir, origin, 10);
+
+    checkMove(moveDir) {
+        var origin = new THREE.Vector3(this.x, this.y + 0.5, this.z);
+        var dir = new THREE.Vector3();
+        switch (moveDir) {
+            case 1:
+                dir.set(-1, 0, 0);
+                break;
+            case 2:
+                dir.set(0, 0, 1);
+                break;
+            case 3:
+                dir.set(0, 0, -1);
+                break;
+            case 4:
+                dir.set(1, 0, 0);
+                break;
+        };
+
+        var arrowHelper = new THREE.ArrowHelper(dir, origin, 2);
         scene.add(arrowHelper);
 
-    }
+    } //end of checkmove function
+
+
+
 
 } //end of player class
