@@ -22,14 +22,15 @@
     <script>
         var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
-        var boardSize = 15;
-
+        var boardSize = 20;
         var axes = new THREE.AxesHelper(20);
         scene.add(axes);
+        var buttons = [];
+        var dragging = true;
+        var raycaster = new THREE.Raycaster();
 
 
         //Set up the camera
-
         let camSize = 20;
         var aspect = window.innerWidth / window.innerHeight;
         let camera = new THREE.OrthographicCamera(-camSize * aspect, camSize * aspect, camSize, -camSize, 0, 1000);
@@ -37,12 +38,13 @@
         camera.lookAt(scene.position);
         var cameraHolder = new CameraControl(camera);
 
-
+        //Renderer
         var renderer = new THREE.WebGLRenderer({
             antialias: true
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+
 
         //create the board
         var boxGeo = new THREE.BoxGeometry(boardSize, 1, boardSize);
@@ -52,8 +54,41 @@
         var board = new THREE.Mesh(boxGeo, boxMat);
         scene.add(board);
 
+
+        //invisible plane
+        var planeGeo = new THREE.PlaneGeometry(boardSize, boardSize);
+        var planeMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0
+
+        });
+        var placementPlane = new THREE.Mesh(planeGeo, planeMat);
+        placementPlane.rotation.x = -Math.PI / 2;
+        placementPlane.position.y = 6;
+        scene.add(placementPlane);
+
+        //create the box placement helper
+        var helperBoxGeo = new THREE.BoxGeometry(1, 1, 1);
+        var helperBoxMat = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            wireframe: true
+        });
+        var helperBoxMesh = new THREE.Mesh(helperBoxGeo, helperBoxMat);
+        var helperBox = new THREE.Object3D();
+        helperBox.add(helperBoxMesh);
+        helperBoxMesh.position.y = 0.5;
+        helperBox.position.set(0, 1000, 0);
+        scene.add(helperBox);
+
+
+
+
         //add the players
-        var player1 = new Player(0, 0);
+        var player1 = new Player(0, (boardSize / 2));
+        var player2 = new Player(0, -(boardSize / 2));
+        var currPlayer = player2;
+
 
         //create the move buttons
         var north = new MoveButton('north');
@@ -64,45 +99,65 @@
         east.place((boardSize / 2 + 4), 0, 0);
         var west = new MoveButton('west');
         west.place(-(boardSize / 2 + 4), 0, 0);
+        buttons.push(north.mesh, south.mesh, east.mesh, west.mesh);
 
 
+        //Event listeners
         window.addEventListener('resize', resizeHandler);
         window.addEventListener('keydown', keyHandler);
         window.addEventListener('click', clickHandler);
+        window.addEventListener('mousemove', moveHandler);
 
         update();
 
+        //handle mouse moves
+        function moveHandler() {
+            if (dragging) {
+                mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+                raycaster.setFromCamera(mouse, camera);
+                var intersects = raycaster.intersectObject(placementPlane);
+
+                if (intersects.length > 0) {
+                    var dir = new THREE.Vector3(0, -1, 0);
+                    var origin = intersects[0].point;
+                    raycaster.set(origin, dir);
+                    var hit = raycaster.intersectObject(board)[0].point;
+                    helperBox.position.copy(hit);
+
+                } else {
+                    helperBox.position.set(0, 1000, 0);
+                }
+
+            }
+        }
+
+        //handle all clicks
         function clickHandler(e) {
             var caster = new THREE.Raycaster();
             mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             caster.setFromCamera(mouse, camera);
-            var intersects = caster.intersectObjects(scene.children, true);
+            var intersects = caster.intersectObjects(buttons);
 
             if (intersects.length > 0) {
                 var clicked = intersects[0];
                 switch (clicked.object.name) {
                     case 'north':
-                        player1.move('north');
+                        currPlayer.move('north');
                         break;
                     case 'south':
-                        player1.move('south');
+                        currPlayer.move('south');
                         break;
                     case 'east':
-                        player1.move('east');
+                        currPlayer.move('east');
                         break;
                     case 'west':
-                        player1.move('west');
+                        currPlayer.move('west');
                         break;
                 }
             }
-
-
-
-
-
         }
 
-
+        //handle resize
         function resizeHandler() {
             var aspect = window.innerWidth / window.innerHeight;
             camera.left = -aspect * camSize;
@@ -114,6 +169,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        //update loop
         function update() {
             requestAnimationFrame(update);
             renderer.render(scene, camera);
@@ -122,6 +178,7 @@
 
         }
 
+        //handle all keypresses
         function keyHandler(e) {
             switch (e.keyCode) {
                 case 37:

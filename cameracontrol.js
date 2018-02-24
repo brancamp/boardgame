@@ -1,7 +1,7 @@
 class CameraControl {
 
     constructor(camera) {
-        var self = this;
+        //var self = this;
         this.holder = new THREE.Object3D();
         this.moving = false;
         this.holder.add(camera);
@@ -10,7 +10,6 @@ class CameraControl {
 
     rotate(direction) {
         var self = this;
-        //this.holder.rotation.y += Math.PI / 2;
         if (this.moving == false) {
             this.moving = true;
             var newRot;

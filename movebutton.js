@@ -1,7 +1,7 @@
 class MoveButton {
     constructor(name) {
         this.name = name;
-        var geo = new THREE.BoxGeometry(4, 1, 4);
+        var geo = new THREE.BoxGeometry(2, 0.5, 2);
         var mat = new THREE.MeshBasicMaterial({
             color: 0x26b35d
         });
