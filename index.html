@@ -22,10 +22,11 @@
     <script>
         var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
-        var boardSize = 20;
+        var boardSize = 21;
         var axes = new THREE.AxesHelper(20);
         scene.add(axes);
         var buttons = [];
+        var stackables = [];
         var dragging = true;
         var raycaster = new THREE.Raycaster();
 
@@ -85,8 +86,8 @@
 
 
         //add the players
-        var player1 = new Player(0, (boardSize / 2));
-        var player2 = new Player(0, -(boardSize / 2));
+        var player1 = new Player(0, Math.floor(boardSize / 2));
+        var player2 = new Player(0, -Math.floor(boardSize / 2));
         var currPlayer = player2;
 
 
@@ -100,6 +101,11 @@
         var west = new MoveButton('west');
         west.place(-(boardSize / 2 + 4), 0, 0);
         buttons.push(north.mesh, south.mesh, east.mesh, west.mesh);
+
+        //add a box
+        function addBox() {
+            var b = new Box(helperBox.position);
+        }
 
 
         //Event listeners
@@ -115,7 +121,7 @@
             if (dragging) {
                 mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
                 raycaster.setFromCamera(mouse, camera);
-                var intersects = raycaster.intersectObject(placementPlane);
+                var intersects = raycaster.intersectObjects(stackables);
 
                 if (intersects.length > 0) {
                     var dir = new THREE.Vector3(0, -1, 0);
@@ -123,6 +129,9 @@
                     raycaster.set(origin, dir);
                     var hit = raycaster.intersectObject(board)[0].point;
                     helperBox.position.copy(hit);
+                    helperBox.position.x = Math.round(helperBox.position.x);
+                    //helperBox.position.y = Math.round(helperBox.position.y);
+                    helperBox.position.z = Math.round(helperBox.position.z);
 
                 } else {
                     helperBox.position.set(0, 1000, 0);
