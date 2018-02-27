@@ -1,12 +1,19 @@
 class Box {
     constructor(loc) {
+
+        this.origin = loc;
         var geo = new THREE.BoxGeometry(1, 1, 1);
-        var mat = new THREE.MeshBasicMaterial({
+        var mat = new THREE.MeshLambertMaterial({
             color: 0xddaa00
         });
-        var mesh = new THREE.Mesh(geo, mat);
-        scene.add(mesh);
-        mesh.position.copy(loc);
+        this.mesh = new THREE.Mesh(geo, mat);
+        scene.add(this.mesh);
+        this.mesh.position.copy(loc);
+        this.mesh.name = 'box';
+    }
+
+    move(loc) {
+        this.mesh.position.copy(loc);
     }
 
 

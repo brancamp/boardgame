@@ -15,6 +15,7 @@
     <script src="movebutton.js"></script>
     <script src='cameracontrol.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+    <script src="box.js"></script>
 
 </head>
 
@@ -27,8 +28,10 @@
         scene.add(axes);
         var buttons = [];
         var stackables = [];
-        var dragging = true;
+        var dragging = false;
         var raycaster = new THREE.Raycaster();
+        var box;
+
 
 
         //Set up the camera
@@ -47,17 +50,25 @@
         document.body.appendChild(renderer.domElement);
 
 
+        //Lights
+        var dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(boardSize, 50, -boardSize)
+        scene.add(dirLight);
+        var ambi = new THREE.AmbientLight(0x555555);
+        scene.add(ambi);
+
         //create the board
         var boxGeo = new THREE.BoxGeometry(boardSize, 1, boardSize);
-        var boxMat = new THREE.MeshBasicMaterial({
+        var boxMat = new THREE.MeshLambertMaterial({
             color: 0xcccccc
         });
         var board = new THREE.Mesh(boxGeo, boxMat);
         scene.add(board);
+        stackables.push(board);
 
 
-        //invisible plane
-        var planeGeo = new THREE.PlaneGeometry(boardSize, boardSize);
+        //create the invisible plane
+        var planeGeo = new THREE.PlaneGeometry(boardSize + 100, boardSize + 100);
         var planeMat = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             transparent: true,
@@ -66,7 +77,7 @@
         });
         var placementPlane = new THREE.Mesh(planeGeo, planeMat);
         placementPlane.rotation.x = -Math.PI / 2;
-        placementPlane.position.y = 6;
+        placementPlane.position.y = 10;
         scene.add(placementPlane);
 
         //create the box placement helper
@@ -79,16 +90,18 @@
         var helperBox = new THREE.Object3D();
         helperBox.add(helperBoxMesh);
         helperBoxMesh.position.y = 0.5;
-        helperBox.position.set(0, 1000, 0);
+        helperBox.position.set(0, 100, 0);
         scene.add(helperBox);
 
 
 
 
         //add the players
-        var player1 = new Player(0, Math.floor(boardSize / 2));
-        var player2 = new Player(0, -Math.floor(boardSize / 2));
-        var currPlayer = player2;
+        var player1 = new Player(0, Math.floor(boardSize / 2), 0xff0000);
+        var player2 = new Player(0, -Math.floor(boardSize / 2), 0x0000ff);
+        var currPlayer = player1;
+
+
 
 
         //create the move buttons
@@ -102,10 +115,16 @@
         west.place(-(boardSize / 2 + 4), 0, 0);
         buttons.push(north.mesh, south.mesh, east.mesh, west.mesh);
 
-        //add a box
+
+
+        //add a box that can be placed
+
         function addBox() {
-            var b = new Box(helperBox.position);
+            box = new Box(new THREE.Vector3(boardSize / 1.1, 10, 0));
         }
+        addBox();
+
+
 
 
         //Event listeners
@@ -113,30 +132,66 @@
         window.addEventListener('keydown', keyHandler);
         window.addEventListener('click', clickHandler);
         window.addEventListener('mousemove', moveHandler);
+        window.addEventListener('mousedown', mouseDownHandler);
+        window.addEventListener('mouseup', mouseUpHandler);
 
         update();
 
+        function mouseDownHandler() {
+            mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(mouse, camera);
+            var intersects = raycaster.intersectObjects(scene.children);
+            if (intersects.length > 0) {
+
+                var hit = intersects[0];
+                if (hit.object.name == 'box') {
+                    dragging = true;
+                }
+            }
+        }
+
+
+        function mouseUpHandler() {
+            if (dragging) {
+                dragging = false;
+                if (helperBox.position.y < 99) { // then its at a valid place to place a box
+                    box.move(helperBox.position.addVectors(helperBox.position, new THREE.Vector3(0, 0.5, 0)));
+                    stackables.push(box.mesh);
+                    addBox(); //create a new box
+                } else {
+                    box.move(box.origin);
+                }
+            }
+        }
+
+
         //handle mouse moves
         function moveHandler() {
+
             if (dragging) {
                 mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
                 raycaster.setFromCamera(mouse, camera);
-                var intersects = raycaster.intersectObjects(stackables);
+                var intersects = raycaster.intersectObject(placementPlane);
 
                 if (intersects.length > 0) {
                     var dir = new THREE.Vector3(0, -1, 0);
                     var origin = intersects[0].point;
+                    box.move(origin);
                     raycaster.set(origin, dir);
-                    var hit = raycaster.intersectObject(board)[0].point;
-                    helperBox.position.copy(hit);
-                    helperBox.position.x = Math.round(helperBox.position.x);
-                    //helperBox.position.y = Math.round(helperBox.position.y);
-                    helperBox.position.z = Math.round(helperBox.position.z);
-
+                    var intersects = raycaster.intersectObjects(stackables);
+                    if (intersects.length > 0) {
+                        var hit = intersects[0].point;
+                        helperBox.position.copy(hit);
+                        helperBox.position.x = Math.round(helperBox.position.x);
+                        helperBox.position.z = Math.round(helperBox.position.z);
+                    } else {
+                        helperBox.position.set(0, 100, 0);
+                    }
                 } else {
-                    helperBox.position.set(0, 1000, 0);
+                    helperBox.position.set(0, 100, 0);
                 }
-
+            } else {
+                helperBox.position.set(0, 100, 0);
             }
         }
 

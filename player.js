@@ -1,12 +1,12 @@
 class Player {
-    constructor(x, z) {
+    constructor(x, z, color) {
         this.x = x;
         this.z = z;
         this.y = 0.5;
         this.self = this;
         var geo = new THREE.BoxGeometry(1, 1, 1);
-        var mat = new THREE.MeshBasicMaterial({
-            color: 0x2D8D9F
+        var mat = new THREE.MeshLambertMaterial({
+            color: color
         });
         var mesh = new THREE.Mesh(geo, mat);
         this.ob = new THREE.Object3D();
@@ -25,22 +25,26 @@ class Player {
 
 
     move(dir) {
-        this.checkMove(dir);
-        switch (dir) {
-            case 'north':
-                this.z -= 1;
-                break;
-            case 'south':
-                this.z += 1;
-                break;
-            case 'east':
-                this.x += 1;
-                break;
-            case 'west':
-                this.x -= 1;
-                break;
-        };
-        this.ob.position.set(this.x, this.y, this.z);
+        var canMove = this.checkMove(dir);
+        if (canMove) {
+            switch (dir) {
+                case 'north':
+                    this.z -= 1;
+                    break;
+                case 'south':
+                    this.z += 1;
+                    break;
+                case 'east':
+                    this.x += 1;
+                    break;
+                case 'west':
+                    this.x -= 1;
+                    break;
+            };
+            this.ob.position.set(this.x, this.y, this.z);
+
+        }
+
     } //end of move function
 
 
@@ -62,8 +66,24 @@ class Player {
                 break;
         };
 
-        var arrowHelper = new THREE.ArrowHelper(dir, origin, 3);
+        var arrowHelper = new THREE.ArrowHelper(dir, origin, 3, 0x000000);
         scene.add(arrowHelper);
+
+        var caster = new THREE.Raycaster();
+        caster.set(origin, dir);
+        var intersects = caster.intersectObjects(scene.children);
+        if (intersects.length > 0) {
+            if (intersects[0].distance < 1) {
+                console.log("something in the way");
+                return false;
+            }
+        }
+
+
+
+
+
+        return true;
 
     } //end of checkmove function
 
