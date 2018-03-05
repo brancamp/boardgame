@@ -8,6 +8,18 @@
             margin: 0;
         }
 
+        div {
+            color: white;
+            position: absolute;
+            padding: 10px;
+        }
+
+        h1 {
+            font-family: monospace;
+            font-size: 1em;
+
+        }
+
     </style>
     <script src="three.js/build/three.min.js"></script>
     <script src="player.js"></script>
@@ -20,6 +32,11 @@
 </head>
 
 <body>
+    <div>
+        <h1 id='turnbox'>THis is a test</h1>
+        <h1 id='movesbox'>This is another test</h1>
+    </div>
+
     <script>
         var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
@@ -28,9 +45,16 @@
         scene.add(axes);
         var buttons = [];
         var stackables = [];
+        var players = [];
+        var goals = [];
         var dragging = false;
         var raycaster = new THREE.Raycaster();
         var box;
+        var moves = 5;
+        var movesLeft = moves;
+
+        var turnBox = document.getElementById('turnbox');
+        var movesBox = document.getElementById('movesbox');
 
 
 
@@ -98,10 +122,13 @@
 
         //add the players
         var player1 = new Player(0, Math.floor(boardSize / 2), 0xff0000);
+        player1.name = "Player1";
         var player2 = new Player(0, -Math.floor(boardSize / 2), 0x0000ff);
+        player2.name = "Player2";
         var currPlayer = player1;
 
-
+        players.push(player1.mesh);
+        players.push(player2.mesh);
 
 
         //create the move buttons
@@ -118,7 +145,6 @@
 
 
         //add a box that can be placed
-
         function addBox() {
             box = new Box(new THREE.Vector3(boardSize / 1.1, 10, 0));
         }
@@ -135,7 +161,56 @@
         window.addEventListener('mousedown', mouseDownHandler);
         window.addEventListener('mouseup', mouseUpHandler);
 
+        updateInfo();
+
         update();
+
+        function updateInfo() {
+
+            if (movesLeft < 1) {
+                switchPlayer();
+            }
+            turnBox.innerHTML = "It is " + currPlayer.name + "'s turn.";
+            movesBox.innerHTML = "You have " + movesLeft + " moves left.";
+        }
+
+        function switchPlayer() {
+            if (currPlayer == player1) {
+                currPlayer = player2;
+            } else {
+                currPlayer = player1;
+            }
+            movesLeft = moves;
+        }
+
+        function checkMove(x, z) {
+            var currHeight = checkHeight(currPlayer.x, currPlayer.z);
+            var diff = checkHeight(x, z) - currHeight;
+            if (Math.abs(diff) > 1) {
+                return Infinity;
+            } else if (diff > 0) {
+                return -1;
+            } else if (diff < 0) {
+                return 1;
+            } else {
+                return 0;
+            }
+
+        }
+
+        function checkHeight(x, z) {
+            var heightChecker = new THREE.Raycaster();
+            var origin = new THREE.Vector3(x, 10, z);
+            var dir = new THREE.Vector3(0, -1, 0);
+            heightChecker.set(origin, dir);
+            var intersects = heightChecker.intersectObjects(stackables);
+            if (intersects.length < 1) {
+                return Infinity;
+            } else {
+                var dist = intersects[0].distance;
+                return dist;
+            }
+        }
 
         function mouseDownHandler() {
             mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
@@ -154,10 +229,14 @@
         function mouseUpHandler() {
             if (dragging) {
                 dragging = false;
-                if (helperBox.position.y < 99) { // then its at a valid place to place a box
+                raycaster.set(new THREE.Vector3(helperBox.position.x, 10, helperBox.position.z), new THREE.Vector3(0, -1, 0));
+                var hits = raycaster.intersectObjects(players);
+                if (helperBox.position.y < 99 && hits.length == 0) { // then its at a valid place to place a box
                     box.move(helperBox.position.addVectors(helperBox.position, new THREE.Vector3(0, 0.5, 0)));
                     stackables.push(box.mesh);
                     addBox(); //create a new box
+                    movesLeft--;
+                    updateInfo();
                 } else {
                     box.move(box.origin);
                 }
@@ -206,18 +285,29 @@
                 var clicked = intersects[0];
                 switch (clicked.object.name) {
                     case 'north':
-                        currPlayer.move('north');
+                        var check = checkMove(currPlayer.x, currPlayer.z - 1);
                         break;
                     case 'south':
-                        currPlayer.move('south');
+                        var check = checkMove(currPlayer.x, currPlayer.z + 1);
                         break;
                     case 'east':
-                        currPlayer.move('east');
+                        var check = checkMove(currPlayer.x + 1, currPlayer.z);
                         break;
                     case 'west':
-                        currPlayer.move('west');
+                        var check = checkMove(currPlayer.x - 1, currPlayer.z);
                         break;
                 }
+                if (check < Infinity) {
+                    var movesReq = 1;
+                    if (check > 0) {
+                        movesReq = 2;
+                    }
+                    if (movesLeft >= movesReq) {
+                        currPlayer.move(clicked.object.name, check);
+                        movesLeft -= movesReq;
+                    }
+                }
+                updateInfo();
             }
         }
 
@@ -255,6 +345,8 @@
         }
 
     </script>
+
+
 </body>
 
 

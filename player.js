@@ -8,10 +8,10 @@ class Player {
         var mat = new THREE.MeshLambertMaterial({
             color: color
         });
-        var mesh = new THREE.Mesh(geo, mat);
+        this.mesh = new THREE.Mesh(geo, mat);
         this.ob = new THREE.Object3D();
-        this.ob.add(mesh);
-        mesh.position.set(0, 0.5, 0);
+        this.ob.add(this.mesh);
+        this.mesh.position.set(0, 0.5, 0);
         this.ob.position.set(this.x, this.y, this.z);
         scene.add(this.ob);
         this.moving = false;
@@ -24,28 +24,29 @@ class Player {
 
 
 
-    move(dir) {
-        var canMove = this.checkMove(dir);
-        if (canMove) {
-            switch (dir) {
-                case 'north':
-                    this.z -= 1;
-                    break;
-                case 'south':
-                    this.z += 1;
-                    break;
-                case 'east':
-                    this.x += 1;
-                    break;
-                case 'west':
-                    this.x -= 1;
-                    break;
-            };
-            this.ob.position.set(this.x, this.y, this.z);
+    move(dir, vert) {
 
-        }
+
+        switch (dir) {
+            case 'north':
+                this.z -= 1;
+                break;
+            case 'south':
+                this.z += 1;
+                break;
+            case 'east':
+                this.x += 1;
+                break;
+            case 'west':
+                this.x -= 1;
+                break;
+        };
+        this.ob.position.set(this.x, this.y += vert, this.z);
+
+
 
     } //end of move function
+
 
 
     checkMove(moveDir) {
